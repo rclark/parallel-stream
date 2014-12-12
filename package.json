@@ -1,0 +1,22 @@
+{
+  "name": "concurrent-stream",
+  "version": "1.0.0",
+  "description": "Concurrent transform stream",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/rclark/concurrent-stream.git"
+  },
+  "author": "Ryan Clark",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rclark/concurrent-stream/issues"
+  },
+  "homepage": "https://github.com/rclark/concurrent-stream",
+  "dependencies": {
+    "queue-async": "^1.0.7"
+  }
+}
