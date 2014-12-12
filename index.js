@@ -9,20 +9,20 @@ function Concurrent(concurrency, options) {
   this.buffer.highWaterMark = 2 * concurrency;
 }
 
-// Override this in your implementation. Otherwise this is a pass-through
+// Override _process in your implementation. Otherwise this is a pass-through
 Concurrent.prototype._process = function(chunk, enc, callback) {
   this.push(chunk);
   callback();
 };
 
-// Override this to perform any pre-processing steps that may convert an
-// incoming chunk into one or more processing jobs. You must push each chunk
-// to be processed into the internal buffer
+// Optionally, override _preprocess to perform any pre-processing steps that may
+// convert an incoming chunk into one or more processing jobs. You must push
+// each chunk to be processed into the internal buffer
 Concurrent.prototype._preprocess = function(chunk, enc) {
   this.buffer.push(chunk);
 };
 
-// Do not override the _tranform and _flush functions
+// Do not override _tranform and _flush functions
 Concurrent.prototype._transform = function(chunk, enc, callback) {
   var stream = this;
 
@@ -45,7 +45,7 @@ Concurrent.prototype._flush = function(callback) {
 function processChunk(stream, done) {
   var data = stream.buffer.shift();
   if (!data) return done();
-  
+
   stream._process(data, enc, function(err) {
     if (err) return callback(err);
     stream.queue.defer(processChunk);
