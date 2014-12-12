@@ -33,21 +33,26 @@ Concurrent.prototype._transform = function(chunk, enc, callback) {
   }
 
   this._preprocess(chunk, enc);
-  this.queue.defer(processChunk, this);
+  this.queue.defer(processChunk, this, this.buffer.shift());
   callback();
 };
 
 Concurrent.prototype._flush = function(callback) {
-  while (this.buffer.length) this.queue.defer(processChunk, this);
+  while (this.buffer.length) {
+    this.queue.defer(processChunk, this, this.buffer.shift());
+  }
   this.queue.await(callback);
 };
 
-function processChunk(stream, done) {
-  var data = stream.buffer.shift();
+function processChunk(stream, data, done) {
   if (!data) return done();
 
   stream._process(data, enc, function(err) {
-    if (err) return callback(err);
+    if (err) {
+      stream.emit('error', err);
+      done(err);
+    }
+
     stream.queue.defer(processChunk);
     done();
   });
