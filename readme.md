@@ -17,7 +17,12 @@ function MyStream(concurrency, options) {
 }
 
 MyStream.prototype._process = function(chunk, enc, callback) {
-  processChunkAsync(chunk, callback);
+  var _this = this;
+  processChunkAsync(chunk, function(err, result) {
+    if (err) return callback(err);
+    _this.push(result);
+    callback();
+  });
 }
 
 // Process up to ten chunks simultaneously
