@@ -4,7 +4,7 @@
   "description": "Concurrent transform stream",
   "main": "index.js",
   "scripts": {
-    "test": "npm test/*.test.js"
+    "test": "tape test/*.test.js"
   },
   "repository": {
     "type": "git",
@@ -18,5 +18,8 @@
   "homepage": "https://github.com/rclark/concurrent-stream",
   "dependencies": {
     "queue-async": "^1.0.7"
+  },
+  "devDependencies": {
+    "tape": "^3.0.3"
   }
 }
