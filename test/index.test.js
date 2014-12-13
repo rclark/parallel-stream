@@ -14,10 +14,19 @@ test('reaches desired concurrency', function(t) {
   util.inherits(TestStream, Concurrent);
 
   TestStream.prototype._process = function(chunk, enc, callback) {
-    this.monitor.process(this.delay, callback);
+    var _this = this;
+    var finished = function(err, result) {
+      _this.push(result);
+      callback();
+    };
+    this.monitor.process(chunk, this.delay, finished);
   };
 
+  var received = [];
   var testStream = new TestStream(10, 1000);
+  testStream.on('data', function(data) {
+    received.push(Number(data.toString()));
+  });
 
   function write(chunk, callback) {
     setTimeout(function() {
@@ -29,12 +38,15 @@ test('reaches desired concurrency', function(t) {
   var q = queue(1);
   for (var i = 0; i < 50; i++) q.defer(write, i);
   q.await(function() {
-    t.equal(testStream.monitor.concurrency(), 10, 'hit desired concurrency');
-    testStream.on('data', function(d) {
-      console.log(d);
-    });
-    testStream.monitor.close();
     testStream.end();
+    t.equal(testStream.monitor.concurrency(), 10, 'hit desired concurrency');
+    testStream.monitor.close();
+    t.equal(received.length, 50, 'received all chunks');
+
+    for (var j = 0; j < 50; j++) {
+      if (received.indexOf(j) === -1) t.fail('Did not receive chunk ' + j);
+    }
+
     t.end();
   });
 });

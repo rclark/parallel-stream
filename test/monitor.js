@@ -4,11 +4,13 @@ module.exports = function() {
   var closed = false;
 
   return {
-    process: function(delay, callback) {
+    process: function(chunk, delay, callback) {
+
       if (closed) return callback();
 
       concurrency++;
       callback.fired = false;
+      callback.chunk = chunk;
       callbacks.push(callback);
 
       setTimeout(function() {
@@ -16,7 +18,7 @@ module.exports = function() {
         if (!cb.fired) {
           concurrency--;
           cb.fired = true;
-          cb();
+          cb(null, cb.chunk);
         }
       }, delay);
     },
@@ -27,7 +29,7 @@ module.exports = function() {
         if (!cb.fired) {
           concurrency--;
           cb.fired = true;
-          cb();
+          cb(null, cb.chunk);
         }
       });
     },
