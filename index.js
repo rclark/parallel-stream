@@ -30,6 +30,7 @@ Concurrent.prototype._preprocess = function(chunk, enc) {
 // Do not override _tranform and _flush functions
 Concurrent.prototype._transform = function(chunk, enc, callback) {
   var stream = this;
+  stream._priorEncoding = enc;
 
   if (this.concurrentBuffer.length >= this.concurrentBuffer.highWaterMark) {
     return setImmediate(function() {
@@ -38,11 +39,19 @@ Concurrent.prototype._transform = function(chunk, enc, callback) {
   }
 
   this._preprocess(chunk, enc);
-  this.concurrentQueue.defer(processChunk, this, enc);
+  for (var i = 0; i < this.concurrentBuffer.length; i++) {
+    this.concurrentQueue.defer(processChunk, this, enc);
+  }
   callback();
 };
 
 Concurrent.prototype._flush = function(callback) {
+  var remaining = this.concurrentBuffer.length;
+
+  for (var i = 0; i < remaining; i++) {
+    this.concurrentQueue.defer(processChunk, this, this._priorEncoding);
+  }
+
   this.concurrentQueue.await(callback);
 };
 
