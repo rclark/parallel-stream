@@ -1,6 +1,6 @@
 # parallel-stream
 
-![build status](https://travis-ci.org/rclark/parallel-stream.svg?branch=master)
+[![build status](https://travis-ci.org/rclark/parallel-stream.svg?branch=master)](https://travis-ci.org/rclark/parallel-stream)
 
 A transform stream that processes chunks concurrently. Stream order is not preserved.
 
