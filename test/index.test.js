@@ -1,6 +1,6 @@
 var test = require('tape');
 var monitor = require('./monitor');
-var Concurrent = require('..');
+var Parallel = require('..');
 var util = require('util');
 var queue = require('queue-async');
 
@@ -8,10 +8,10 @@ test('reaches desired concurrency', function(t) {
   function TestStream(concurrency, delay, options) {
     this.monitor = monitor();
     this.delay = Number(delay);
-    Concurrent.call(this, concurrency, options);
+    Parallel.call(this, concurrency, options);
   }
 
-  util.inherits(TestStream, Concurrent);
+  util.inherits(TestStream, Parallel);
 
   TestStream.prototype._process = function(chunk, enc, callback) {
     var _this = this;

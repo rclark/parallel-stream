@@ -2,10 +2,10 @@ var stream = require('stream');
 var util = require('util');
 var queue = require('queue-async');
 
-module.exports = Concurrent;
+module.exports = Parallel;
 
-util.inherits(Concurrent, stream.Transform);
-function Concurrent(concurrency, options) {
+util.inherits(Parallel, stream.Transform);
+function Parallel(concurrency, options) {
   stream.Transform.call(this, options);
 
   concurrency = Number(concurrency) || 1;
@@ -15,7 +15,7 @@ function Concurrent(concurrency, options) {
 }
 
 // Override _process in your implementation. Otherwise this is a pass-through
-Concurrent.prototype._process = function(chunk, enc, callback) {
+Parallel.prototype._process = function(chunk, enc, callback) {
   this.push(chunk);
   callback();
 };
@@ -23,12 +23,12 @@ Concurrent.prototype._process = function(chunk, enc, callback) {
 // Optionally, override _preprocess to perform any pre-processing steps that may
 // convert an incoming chunk into one or more processing jobs. You must push
 // each chunk to be processed into the internal buffer
-Concurrent.prototype._preprocess = function(chunk, enc) {
+Parallel.prototype._preprocess = function(chunk, enc) {
   this.concurrentBuffer.push(chunk);
 };
 
 // Do not override _tranform and _flush functions
-Concurrent.prototype._transform = function(chunk, enc, callback) {
+Parallel.prototype._transform = function(chunk, enc, callback) {
   var stream = this;
   stream._priorEncoding = enc;
 
@@ -45,7 +45,7 @@ Concurrent.prototype._transform = function(chunk, enc, callback) {
   callback();
 };
 
-Concurrent.prototype._flush = function(callback) {
+Parallel.prototype._flush = function(callback) {
   var remaining = this.concurrentBuffer.length;
 
   for (var i = 0; i < remaining; i++) {
