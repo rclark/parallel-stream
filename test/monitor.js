@@ -18,6 +18,7 @@ module.exports = function() {
         if (!cb.fired) {
           concurrency--;
           cb.fired = true;
+          // console.log('write chunk');
           cb(null, cb.chunk);
         }
       }, delay);

@@ -47,7 +47,6 @@ Parallel.prototype._transform = function(chunk, enc, callback) {
 
 Parallel.prototype._flush = function(callback) {
   var remaining = this.concurrentBuffer.length;
-
   for (var i = 0; i < remaining; i++) {
     this.concurrentQueue.defer(processChunk, this, this._priorEncoding);
   }
