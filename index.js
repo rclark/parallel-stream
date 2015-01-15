@@ -59,10 +59,7 @@ function processChunk(stream, enc, done) {
   if (!data) return done();
 
   stream._process(data, enc, function(err) {
-    if (err && !stream._errored) {
-      stream._errored = true;
-      return stream.emit('error', err);
-    }
+    if (err) stream.emit('error', err);
     done(err);
   });
 }

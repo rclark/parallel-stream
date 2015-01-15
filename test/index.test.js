@@ -103,25 +103,3 @@ test('reaches desired concurrency w/pipes', function(t) {
 
   readable.pipe(testStream);
 });
-
-test('does not fire callback twice on error', function(t) {
-  util.inherits(WillError, Parallel);
-  function WillError(concurrency, delay, options) {
-    this.monitor = monitor();
-    this.delay = Number(delay);
-    Parallel.call(this, concurrency, options);
-  }
-  WillError.prototype._process = function(chunk, enc, callback) {
-    setTimeout(callback, 500, 'ERROR');
-  };
-
-  var readable = new Readable();
-  var willError = new WillError(10);
-
-  t.plan(1);
-  willError.on('error', function(err) {
-    t.equal(err, 'ERROR', 'expected error');
-  });
-
-  readable.pipe(willError).resume();
-});
