@@ -1,6 +1,6 @@
 var stream = require('stream');
 var util = require('util');
-var queue = require('queue-async');
+var queue = require('basic-queue');
 
 module.exports = Parallel;
 
@@ -9,7 +9,7 @@ function Parallel(concurrency, options) {
   stream.Transform.call(this, options);
 
   concurrency = Number(concurrency) || 1;
-  this.concurrentQueue = queue(concurrency);
+  this.concurrentQueue = new queue(processChunk, concurrency);
   this.concurrentBuffer = [];
   this.concurrentBuffer.highWaterMark = 2 * concurrency;
 }
@@ -30,7 +30,6 @@ Parallel.prototype._preprocess = function(chunk, enc) {
 // Do not override _tranform and _flush functions
 Parallel.prototype._transform = function(chunk, enc, callback) {
   var stream = this;
-  stream._priorEncoding = enc;
 
   if (this.concurrentBuffer.length >= this.concurrentBuffer.highWaterMark) {
     return setImmediate(function() {
@@ -40,7 +39,7 @@ Parallel.prototype._transform = function(chunk, enc, callback) {
 
   this._preprocess(chunk, enc);
   for (var i = 0; i < this.concurrentBuffer.length; i++) {
-    this.concurrentQueue.defer(processChunk, this, enc);
+    this.concurrentQueue.add(this);
   }
   callback();
 };
@@ -48,18 +47,18 @@ Parallel.prototype._transform = function(chunk, enc, callback) {
 Parallel.prototype._flush = function(callback) {
   var remaining = this.concurrentBuffer.length;
   for (var i = 0; i < remaining; i++) {
-    this.concurrentQueue.defer(processChunk, this, this._priorEncoding);
+    this.concurrentQueue.add(this);
   }
 
-  this.concurrentQueue.await(callback);
+  this.concurrentQueue.on('empty', callback);
 };
 
-function processChunk(stream, enc, done) {
+function processChunk(stream, done) {
   var data = stream.concurrentBuffer.shift();
   if (!data) return done();
 
-  stream._process(data, enc, function(err) {
+  stream._process(data, null, function(err) {
     if (err) stream.emit('error', err);
-    done(err);
+    done();
   });
 }

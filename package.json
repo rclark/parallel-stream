@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/rclark/parallel-stream",
   "dependencies": {
+    "basic-queue": "^1.0.0",
     "queue-async": "^1.0.7"
   },
   "devDependencies": {
