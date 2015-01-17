@@ -20,20 +20,17 @@ function Parallel(concurrency, options) {
   stream.Transform.call(this, options);
 }
 
-// Override _process in your implementation. Otherwise this is a pass-through
+// _process and optionally _preprocess are to be overriden
 Parallel.prototype._process = function(chunk, enc, callback) {
   this.push(chunk);
   callback();
 };
 
-// Optionally, override _preprocess to perform any pre-processing steps that may
-// convert an incoming chunk into one or more processing jobs. You must push
-// each chunk to be processed into the internal buffer
 Parallel.prototype._preprocess = function(chunk, enc) {
   this.concurrentBuffer.push(chunk);
 };
 
-// Do not override _tranform and _flush functions
+// do not override _transform and _flush
 Parallel.prototype._transform = function(chunk, enc, callback) {
   var err = this.errors.unshift();
   if (err) return callback(err);
@@ -54,7 +51,7 @@ Parallel.prototype._flush = function(callback) {
   if (!remaining) return callback();
 
   for (var i = 0; i < remaining; i++) {
-    this.concurrentQueue.add(this);
+    this.concurrentQueue.add();
   }
 
   function done(err) {
