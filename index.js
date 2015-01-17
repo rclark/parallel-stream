@@ -9,12 +9,12 @@ function Parallel(concurrency, options) {
   concurrency = Number(concurrency) || 1;
 
   var _this = this;
+  this.errors = [];
   this.concurrentBuffer = [];
   this.concurrentBuffer.highWaterMark = 2 * concurrency;
   this.concurrentQueue = new queue(this._processChunk.bind(this), concurrency);
   this.concurrentQueue.on('error', function(err) {
-    _this._errored = true;
-    _this.emit('error', err);
+    _this.errors.push(err);
   });
 
   stream.Transform.call(this, options);
@@ -35,12 +35,11 @@ Parallel.prototype._preprocess = function(chunk, enc) {
 
 // Do not override _tranform and _flush functions
 Parallel.prototype._transform = function(chunk, enc, callback) {
-  var _this = this;
+  var err = this.errors.unshift();
+  if (err) return callback(err);
 
   if (this.concurrentBuffer.length >= this.concurrentBuffer.highWaterMark) {
-    return setImmediate(function() {
-      _this._transform(chunk, enc, callback);
-    });
+    return setImmediate(this._transform.bind(this), chunk, enc, callback);
   }
 
   this._preprocess(chunk, enc);
@@ -52,16 +51,19 @@ Parallel.prototype._transform = function(chunk, enc, callback) {
 
 Parallel.prototype._flush = function(callback) {
   var remaining = this.concurrentBuffer.length;
+  if (!remaining) return callback();
+
   for (var i = 0; i < remaining; i++) {
     this.concurrentQueue.add(this);
   }
 
-  if (this.concurrentQueue.running === 0) return callback();
+  function done(err) {
+    if (!done.sent) callback(err);
+    done.sent = true;
+  }
 
-  var _this = this;
-  this.concurrentQueue.on('empty', function() {
-    callback(_this._errored ? new Error('Encountered an error') : null);
-  });
+  this.on('error', done);
+  this.concurrentQueue.on('empty', done);
 };
 
 Parallel.prototype._processChunk = function(_, callback) {

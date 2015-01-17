@@ -41,68 +41,68 @@ Readable.prototype._read = function(size) {
   }, 95);
 };
 
-// test('reaches desired concurrency w/writes', function(t) {
-//   var received = [];
-//   var testStream = new TestStream(10, 1000);
-//
-//   testStream.on('data', function(data) {
-//     received.push(Number(data.toString()));
-//   });
-//
-//   function write(chunk, callback) {
-//     setTimeout(function() {
-//       testStream.write(chunk.toString());
-//       callback();
-//     }, 95);
-//   }
-//
-//   var q = queue(1);
-//   for (var i = 0; i < 50; i++) q.defer(write, i);
-//   q.await(function() {
-//     testStream.on('end', function() {
-//       t.pass('fired end event');
-//       t.equal(received.length, 50, 'received all chunks');
-//
-//       for (var j = 0; j < 50; j++) {
-//         if (received.indexOf(j) === -1) t.fail('Did not receive chunk ' + j);
-//       }
-//
-//       t.end();
-//     });
-//
-//     t.equal(testStream.monitor.concurrency(), 10, 'hit desired concurrency');
-//     testStream.end();
-//   });
-// });
-//
-// test('reaches desired concurrency w/pipes', function(t) {
-//   var received = [];
-//   var readable = new Readable();
-//   var testStream = new TestStream(10, 1000);
-//
-//   readable.on('finishWrites', function() {
-//     setImmediate(function() {
-//       t.equal(testStream.monitor.concurrency(), 10, 'hit desired concurrency');
-//     });
-//   });
-//
-//   testStream.on('data', function(data) {
-//     received.push(Number(data.toString()));
-//   });
-//
-//   testStream.on('end', function() {
-//     t.pass('fired end event');
-//     t.equal(received.length, 50, 'received all chunks');
-//
-//     for (var j = 0; j < 50; j++) {
-//       if (received.indexOf(j) === -1) t.fail('Did not receive chunk ' + j);
-//     }
-//
-//     t.end();
-//   });
-//
-//   readable.pipe(testStream);
-// });
+test('reaches desired concurrency w/writes', function(t) {
+  var received = [];
+  var testStream = new TestStream(10, 1000);
+
+  testStream.on('data', function(data) {
+    received.push(Number(data.toString()));
+  });
+
+  function write(chunk, callback) {
+    setTimeout(function() {
+      testStream.write(chunk.toString());
+      callback();
+    }, 95);
+  }
+
+  var q = queue(1);
+  for (var i = 0; i < 50; i++) q.defer(write, i);
+  q.await(function() {
+    testStream.on('end', function() {
+      t.pass('fired end event');
+      t.equal(received.length, 50, 'received all chunks');
+
+      for (var j = 0; j < 50; j++) {
+        if (received.indexOf(j) === -1) t.fail('Did not receive chunk ' + j);
+      }
+
+      t.end();
+    });
+
+    t.equal(testStream.monitor.concurrency(), 10, 'hit desired concurrency');
+    testStream.end();
+  });
+});
+
+test('reaches desired concurrency w/pipes', function(t) {
+  var received = [];
+  var readable = new Readable();
+  var testStream = new TestStream(10, 1000);
+
+  readable.on('finishWrites', function() {
+    setImmediate(function() {
+      t.equal(testStream.monitor.concurrency(), 10, 'hit desired concurrency');
+    });
+  });
+
+  testStream.on('data', function(data) {
+    received.push(Number(data.toString()));
+  });
+
+  testStream.on('end', function() {
+    t.pass('fired end event');
+    t.equal(received.length, 50, 'received all chunks');
+
+    for (var j = 0; j < 50; j++) {
+      if (received.indexOf(j) === -1) t.fail('Did not receive chunk ' + j);
+    }
+
+    t.end();
+  });
+
+  readable.pipe(testStream);
+});
 
 test('errored stream does not emit an end event', function(t) {
   util.inherits(Count, stream.Readable);
