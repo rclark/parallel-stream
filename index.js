@@ -6,12 +6,18 @@ module.exports = Parallel;
 
 util.inherits(Parallel, stream.Transform);
 function Parallel(concurrency, options) {
-  stream.Transform.call(this, options);
-
   concurrency = Number(concurrency) || 1;
-  this.concurrentQueue = new queue(processChunk, concurrency);
+
+  var _this = this;
   this.concurrentBuffer = [];
   this.concurrentBuffer.highWaterMark = 2 * concurrency;
+  this.concurrentQueue = new queue(this._processChunk.bind(this), concurrency);
+  this.concurrentQueue.on('error', function(err) {
+    _this._errored = true;
+    _this.emit('error', err);
+  });
+
+  stream.Transform.call(this, options);
 }
 
 // Override _process in your implementation. Otherwise this is a pass-through
@@ -29,17 +35,17 @@ Parallel.prototype._preprocess = function(chunk, enc) {
 
 // Do not override _tranform and _flush functions
 Parallel.prototype._transform = function(chunk, enc, callback) {
-  var stream = this;
+  var _this = this;
 
   if (this.concurrentBuffer.length >= this.concurrentBuffer.highWaterMark) {
     return setImmediate(function() {
-      stream._transform(chunk, enc, callback);
+      _this._transform(chunk, enc, callback);
     });
   }
 
   this._preprocess(chunk, enc);
   for (var i = 0; i < this.concurrentBuffer.length; i++) {
-    this.concurrentQueue.add(this);
+    this.concurrentQueue.add();
   }
   callback();
 };
@@ -50,15 +56,16 @@ Parallel.prototype._flush = function(callback) {
     this.concurrentQueue.add(this);
   }
 
-  this.concurrentQueue.on('empty', callback);
+  if (this.concurrentQueue.running === 0) return callback();
+
+  var _this = this;
+  this.concurrentQueue.on('empty', function() {
+    callback(_this._errored ? new Error('Encountered an error') : null);
+  });
 };
 
-function processChunk(stream, done) {
-  var data = stream.concurrentBuffer.shift();
-  if (!data) return done();
-
-  stream._process(data, null, function(err) {
-    if (err) stream.emit('error', err);
-    done();
-  });
-}
+Parallel.prototype._processChunk = function(_, callback) {
+  var data = this.concurrentBuffer.shift();
+  if (!data) return callback();
+  this._process(data, null, callback);
+};
