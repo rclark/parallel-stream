@@ -4,7 +4,9 @@
   "description": "Concurrent transform stream",
   "main": "index.js",
   "scripts": {
-    "test": "tape test/*.test.js"
+    "test": "nyc tape test/*.test.js",
+    "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html",
+    "pretest": "eslint index.js test"
   },
   "repository": {
     "type": "git",
@@ -16,12 +18,9 @@
     "url": "https://github.com/rclark/parallel-stream/issues"
   },
   "homepage": "https://github.com/rclark/parallel-stream",
-  "dependencies": {
-    "basic-queue": "1.0.1"
-  },
   "devDependencies": {
-    "progress-stream": "^0.5.0",
-    "queue-async": "^1.0.7",
-    "tape": "^3.0.3"
+    "eslint": "^2.7.0",
+    "nyc": "^6.2.1",
+    "tape": "^4.5.1"
   }
 }
