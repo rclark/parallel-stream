@@ -6,11 +6,24 @@ var stream = require('stream');
  * @param {function} work - a function to process a single chunk. Function
  * signature should be `process(chunk, enc, callback)`. When finished processing,
  * fire the provided `callback`.
- * @param {function} [flush] - a function to run once all chunks have been
+ * @param {function} [flush=undefined] - a function to run once all chunks have been
  * processed, but before the stream emits a `finished` event. Function signature
  * should be `flush(callback)`, fire the provided `callback` when complete.
- * @param {object} [options] - options to pass to the writable stream.
+ * @param {object} [options=undefined] - options to pass to the writable stream.
+ * @param {number} [options.concurrency=1] - number of chunks to process concurrently.
  * @returns {object} a writable stream. **Do not** override the `._write` function.
+ * @example
+ * var parallel = require('parallel-stream');
+ *
+ * var writable = parallel.writable(function(chunk, enc, callback) {
+ *   processAsync(chunk)
+ *     .on('done', callback);
+ * }, { objectMode: true, concurrency: 15 });
+ *
+ * readable.pipe(writable)
+ *  .on('finish', function() {
+ *    console.log('complete!');
+ * });
  */
 module.exports.writable = function(work, flush, options) {
   if (typeof flush === 'object') {
@@ -92,8 +105,26 @@ module.exports.writable = function(work, flush, options) {
  * @param {function} work - a function to process a single chunk. Function
  * signature should be `process(chunk, enc, callback)`. When finished processing,
  * fire the provided `callback`.
- * @param {object} options - options to pass to the transform stream.
+ * @param {object} [options = undefined] - options to pass to the transform stream.
+ * @param {number} [options.concurrency = 1] - number of chunks to process concurrently.
  * @returns {object} a transform stream. **Do not** override the `._transform` function.
+ * @example
+ * var parallel = require('parallel-stream');
+ *
+ * var transform = parallel.transform(function(chunk, enc, callback) {
+ *   processAsync(chunk)
+ *     .on('done', function(processedData) {
+ *       callback(null, processedData);
+ *     });
+ * }, { objectMode: true, concurrency: 15 });
+ *
+ * readable.pipe(transform)
+ *  .on('data', function(data) {
+ *     console.log('got processed data: %j', data);
+ *  })
+ *  .on('end', function() {
+ *    console.log('complete!');
+ * });
  */
 module.exports.transform = function(work, options) {
   options = options || {};
