@@ -296,9 +296,10 @@ function transformTests(concurrency) {
       .on('data', function(data) {
         assert.equal(data.toString(), 'pushed', 'this.push wrote data');
         assert.end();
-      }).resume();
+      });
 
     transform.write('pushed');
+    transform.resume();
   });
 
   test('[transform: ' + concurrency + '] accepts chunks on .end()', function(assert) {
