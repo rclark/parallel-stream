@@ -21,6 +21,8 @@
   "devDependencies": {
     "eslint": "^2.7.0",
     "nyc": "^6.2.1",
-    "tape": "^4.5.1"
+    "opener": "^1.4.1",
+    "tape": "^4.5.1",
+    "underscore": "^1.8.3"
   }
 }
