@@ -1,5 +1,17 @@
 var stream = require('stream');
 
+/**
+ * A concurrent writable stream
+ *
+ * @param {function} work - a function to process a single chunk. Function
+ * signature should be `process(chunk, enc, callback)`. When finished processing,
+ * fire the provided `callback`.
+ * @param {function} [flush] - a function to run once all chunks have been
+ * processed, but before the stream emits a `finished` event. Function signature
+ * should be `flush(callback)`, fire the provided `callback` when complete.
+ * @param {object} [options] - options to pass to the writable stream.
+ * @returns {object} a writable stream. **Do not** override the `._write` function.
+ */
 module.exports.writable = function(work, flush, options) {
   if (typeof flush === 'object') {
     options = flush;
@@ -74,6 +86,15 @@ module.exports.writable = function(work, flush, options) {
   return writable;
 };
 
+/**
+ * A concurrent transform stream
+ *
+ * @param {function} work - a function to process a single chunk. Function
+ * signature should be `process(chunk, enc, callback)`. When finished processing,
+ * fire the provided `callback`.
+ * @param {object} options - options to pass to the transform stream.
+ * @returns {object} a transform stream. **Do not** override the `._transform` function.
+ */
 module.exports.transform = function(work, options) {
   options = options || {};
   var concurrency = options.concurrency || 1;

@@ -6,7 +6,8 @@
   "scripts": {
     "test": "nyc tape test/*.test.js",
     "coverage": "nyc --reporter html tape test/*.test.js && opener coverage/index.html",
-    "pretest": "eslint index.js test"
+    "pretest": "eslint index.js test",
+    "docs": "documentation readme --readme-file readme.md --section Usage --quiet"
   },
   "repository": {
     "type": "git",
@@ -19,6 +20,7 @@
   },
   "homepage": "https://github.com/rclark/parallel-stream",
   "devDependencies": {
+    "documentation": "^4.0.0-beta2",
     "eslint": "^2.7.0",
     "nyc": "^6.2.1",
     "opener": "^1.4.1",
