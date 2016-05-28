@@ -57,11 +57,18 @@ module.exports.writable = function(work, flush, options) {
     });
 
     callback();
+    if (writable._writableState.buffer.length === 0) writable.emit('empty');
   };
 
   var end = writable.end.bind(writable);
 
   writable.end = function(chunk, enc, callback) {
+    if (writable._writableState.buffer.length) {
+      return writable.once('empty', function() {
+        writable.end(chunk, enc, callback);
+      });
+    }
+
     if (writable.pending) {
       return writable.once('free', function() {
         writable.end(chunk, enc, callback);

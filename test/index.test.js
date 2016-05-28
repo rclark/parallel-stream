@@ -15,12 +15,19 @@ function timedWorker(pauseTime, err) {
   var worker = function(data, enc, callback) {
     worker.running++;
     worker.data.push(Number(data.toString()));
-    setTimeout(function() {
-      if (worker.err) callback(worker.err);
+
+    function work(data) {
+      if (worker.err) {
+        console.log('sending work error');
+        callback(worker.err);
+      }
       if (err) callback(err);
       else callback(null, data);
       worker.running--;
-    }, pauseTime, data);
+    }
+
+    if (pauseTime) setTimeout(work, pauseTime, data);
+    else work(data);
   };
   worker.running = 0;
   worker.data = [];
@@ -196,6 +203,27 @@ function writableTests(concurrency) {
     writable.on('error', function(err) {
       assert.equal(err.message, 'flush error', 'flush error emitted');
     });
+  });
+
+  test('[writable: ' + concurrency + '] synchronous writer', function(assert) {
+    var work = timedWorker(0);
+    var read = timedReadable(20)
+      .on('end', function() {
+        work.err = new Error('post .end() failure');
+      });
+
+    setTimeout(function() {
+      read.stop = true;
+    }, 2000);
+
+    read.pipe(parallel.writable(work, options))
+      .on('error', function(err) {
+        assert.ifError(err, 'should not error');
+      })
+      .on('finish', function() {
+        assert.pass('finish event should fire');
+        assert.end();
+      });
   });
 }
 
