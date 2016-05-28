@@ -35,14 +35,22 @@ module.exports.writable = function(work, flush, options) {
   var concurrency = options.concurrency || 1;
 
   var writable = new stream.Writable(options);
+  function internal() {
+    // conditional to cover various versions of node.js
+    return writable._writableState.getBuffer ?
+      writable._writableState.getBuffer() : writable._writableState.buffer;
+  }
+
   writable.pending = 0;
 
-  writable._write = function(chunk, enc, callback) {
-    if (writable.err) {
-      writable.errored = true;
-      return callback(writable.err);
+  function fail(err) {
+    if (!writable._writableState.errorEmitted) {
+      writable._writableState.errorEmitted = true;
+      writable.emit('error', err);
     }
+  }
 
+  writable._write = function(chunk, enc, callback) {
     if (writable.pending >= concurrency) {
       return writable.once('free', function() {
         writable._write(chunk, enc, callback);
@@ -53,17 +61,17 @@ module.exports.writable = function(work, flush, options) {
     work.call(writable, chunk, enc, function(err) {
       writable.pending--;
       writable.emit('free');
-      if (err) writable.err = err;
+      if (err) fail(err);
     });
 
     callback();
-    if (writable._writableState.buffer.length === 0) writable.emit('empty');
+    if (internal().length === 0) writable.emit('empty');
   };
 
   var end = writable.end.bind(writable);
 
   writable.end = function(chunk, enc, callback) {
-    if (writable._writableState.buffer.length) {
+    if (internal().length) {
       return writable.once('empty', function() {
         writable.end(chunk, enc, callback);
       });
@@ -92,13 +100,11 @@ module.exports.writable = function(work, flush, options) {
       });
     }
 
+    if (writable._writableState.errorEmitted) return;
     if (callback) writable.on('finish', callback);
 
-    if (writable.err && !writable.errored)
-      return writable.emit('error', writable.err);
-
     flush(function(err) {
-      if (err) return writable.emit('error', err);
+      if (err) return fail(err);
       end();
     });
   };
@@ -140,12 +146,14 @@ module.exports.transform = function(work, options) {
   var transform = new stream.Transform(options);
   transform.pending = 0;
 
-  transform._transform = function(chunk, enc, callback) {
-    if (transform.err) {
-      transform.errored = true;
-      return callback(transform.err);
+  function fail(err) {
+    if (!transform._writableState.errorEmitted) {
+      transform._writableState.errorEmitted = true;
+      transform.emit('error', err);
     }
+  }
 
+  transform._transform = function(chunk, enc, callback) {
     if (transform.pending >= concurrency) {
       return transform.once('free', function() {
         transform._transform(chunk, enc, callback);
@@ -155,7 +163,7 @@ module.exports.transform = function(work, options) {
     transform.pending++;
     work.call(transform, chunk, enc, function(err, data) {
       transform.pending--;
-      if (err) transform.err = err;
+      if (err) fail(err);
       else if (data) transform.push(data);
       transform.emit('free');
     });
@@ -190,9 +198,7 @@ module.exports.transform = function(work, options) {
     }
 
     if (callback) transform.on('finish', callback);
-
-    if (transform.err && !transform.errored)
-      return transform.emit('error', transform.err);
+    if (transform._writableState.errorEmitted) return;
 
     end();
   };

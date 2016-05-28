@@ -17,10 +17,7 @@ function timedWorker(pauseTime, err) {
     worker.data.push(Number(data.toString()));
 
     function work(data) {
-      if (worker.err) {
-        console.log('sending work error');
-        callback(worker.err);
-      }
+      if (worker.err) return callback(worker.err);
       if (err) callback(err);
       else callback(null, data);
       worker.running--;
