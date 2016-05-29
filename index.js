@@ -35,6 +35,7 @@ module.exports.writable = function(work, flush, options) {
   var concurrency = options.concurrency || 1;
 
   var writable = new stream.Writable(options);
+  writable.setMaxListeners(Infinity);
   function internal() {
     // conditional to cover various versions of node.js
     return writable._writableState.getBuffer ?
@@ -144,6 +145,7 @@ module.exports.transform = function(work, options) {
   var concurrency = options.concurrency || 1;
 
   var transform = new stream.Transform(options);
+  transform.setMaxListeners(Infinity);
   transform.pending = 0;
 
   function fail(err) {
